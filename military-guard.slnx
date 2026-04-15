@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="military-guard.API/military-guard.API.csproj" />
+  <Project Path="military-guard.Application/military-guard.Application.csproj" />
+  <Project Path="military-guard.Domain/military-guard.Domain.csproj" />
+  <Project Path="military-guard.Infrastructure/military-guard.Infrastructure.csproj" />
+</Solution>
