@@ -27,7 +27,6 @@ namespace military_guard.Application.Features.Accounts.Queries.GetAllAccounts
             request.PageIndex,
             request.PageSize);
 
-            // 2. Map từ Entity sang DTO
             var dtos = pagedEntities.Items.Select(g => new AccountResponse(
                 g.Id,
                 g.Username,
@@ -37,7 +36,6 @@ namespace military_guard.Application.Features.Accounts.Queries.GetAllAccounts
                 g.IsBanned
             )).ToList();
 
-            // 3. Đóng gói phân trang và trả về
             return new PaginatedList<AccountResponse>(
                 dtos,
                 pagedEntities.TotalCount,
