@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using military_guard.Application.Features.ShiftAssignments.Commands.CreateShiftAssignment;
 using military_guard.Application.Features.ShiftAssignments.Commands.DeleteShiftAssignment;
 using military_guard.Application.Features.ShiftAssignments.Commands.UpdateShiftAssignment;
+using military_guard.Application.Features.ShiftAssignments.Queries.GetAllShiftAssignments;
 using military_guard.Application.Features.ShiftAssignments.Queries.GetShiftAssignmentById;
 
 namespace military_guard.API.Controllers
@@ -18,11 +19,18 @@ namespace military_guard.API.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateShiftAssignment([FromBody] CreateShiftAssignmentCommand command, CancellationToken cancellationToken)
+        ////[HttpPost]
+        ////public async Task<IActionResult> CreateShiftAssignment([FromBody] CreateShiftAssignmentCommand command, CancellationToken cancellationToken)
+        ////{
+        ////    var shiftAssignmentId = await _mediator.Send(command, cancellationToken);
+        ////    return Ok(new { Message = "Sắp xếp ca thành công.", ShiftAssignmentId = shiftAssignmentId });
+        //}
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllShiftAssignments([FromQuery] GetAllShiftAssignmentsQuery query, CancellationToken cancellationToken)
         {
-            var shiftAssignmentId = await _mediator.Send(command, cancellationToken);
-            return Ok(new { Message = "Sắp xếp ca thành công.", ShiftAssignmentId = shiftAssignmentId });
+            var result = await _mediator.Send(query, cancellationToken);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]

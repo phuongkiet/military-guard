@@ -10,6 +10,7 @@ namespace military_guard.Infrastructure.Persistence
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+        public DbSet<Account> Accounts => Set<Account>();
         public DbSet<Militia> Militias => Set<Militia>();
         public DbSet<DutyShift> DutyShifts => Set<DutyShift>();
         public DbSet<ShiftAssignment> ShiftAssignments => Set<ShiftAssignment>();

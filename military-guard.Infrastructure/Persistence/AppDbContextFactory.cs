@@ -8,8 +8,10 @@ namespace military_guard.Infrastructure.Persistence
     {
         public AppDbContext CreateDbContext(string[] args)
         {
+            var apiPath = Path.Combine(Directory.GetCurrentDirectory(), "../military-guard.API");
+
             IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
+                .SetBasePath(apiPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile("appsettings.Development.json", optional: true)
                 .Build();

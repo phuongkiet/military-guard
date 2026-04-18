@@ -1,4 +1,5 @@
 using military_guard.API.ExceptionHandlers;
+using military_guard.API.Extensions;
 using military_guard.Application;
 using military_guard.Infrastructure;
 
@@ -13,6 +14,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddCustomCors();
 
 var app = builder.Build();
 
@@ -24,7 +26,11 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseCors(CorsConfiguration.AllowFrontendPolicy);
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
