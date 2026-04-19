@@ -2,6 +2,7 @@ using military_guard.API.ExceptionHandlers;
 using military_guard.API.Extensions;
 using military_guard.Application;
 using military_guard.Infrastructure;
+using military_guard.Infrastructure.SignalRHubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +34,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.MapHub<AttendanceHub>("/hubs/attendance");
 
 app.MapControllers();
 

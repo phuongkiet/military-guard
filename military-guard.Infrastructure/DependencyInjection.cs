@@ -8,6 +8,7 @@ using military_guard.Domain.Entities;
 using military_guard.Infrastructure.Authentication;
 using military_guard.Infrastructure.Persistence;
 using military_guard.Infrastructure.Repositories;
+using military_guard.Infrastructure.Services;
 using System.Text;
 
 namespace military_guard.Infrastructure
@@ -39,6 +40,8 @@ namespace military_guard.Infrastructure
                 };
             });
 
+            services.AddSignalR();
+
             services.AddScoped<IMilitiaRepository, MilitiaRepository>();
             services.AddScoped<IGuardPostRepository, GuardPostRepository>();
             services.AddScoped<IDutyShiftRepository, DutyShiftRepository>();
@@ -47,6 +50,8 @@ namespace military_guard.Infrastructure
             services.AddScoped<IJwtProvider, JwtProvider>();
             services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<ISignalRService, SignalRService>();
+            services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 
             return services;
         }
