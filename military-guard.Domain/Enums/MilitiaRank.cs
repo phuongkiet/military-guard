@@ -6,7 +6,7 @@ namespace military_guard.Domain.Enums
 {
     public enum MilitiaRank
     {
-        Solider = 1,
+        Soldier = 1,
         ViceSquadLeader = 2,
         SquadLeader = 3,
         ViceCommander = 4,
