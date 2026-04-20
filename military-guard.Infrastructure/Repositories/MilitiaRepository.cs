@@ -67,14 +67,10 @@ public class MilitiaRepository : GenericRepository<Militia>, IMilitiaRepository
         if (manager == null)
             return false;
 
-        // Chặn vòng lặp: Chỉ huy của "manager" không được phép là "currentMilitiaId"
         if (manager.ManagerId == currentMilitiaId)
             return false;
 
-        // ĐIỂM ĂN TIỀN (Optional nhưng rất thực tế): 
-        // Em có thể tận dụng luôn cái logic IsCapableLeader() ở Domain để chặn 
-        // không cho phép gán một anh "Lính mới tò te" làm Chỉ huy của người khác!
-        // if (!manager.IsCapableLeader()) return false;
+        if (!manager.IsCapableLeader()) return false;
 
         return true;
     }
