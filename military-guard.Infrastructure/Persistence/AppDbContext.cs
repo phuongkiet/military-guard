@@ -17,6 +17,7 @@ namespace military_guard.Infrastructure.Persistence
         public DbSet<GuardPost> GuardPosts => Set<GuardPost>();
         public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
         public DbSet<Attendance> Attendances => Set<Attendance>();
+        public DbSet<HolidayEvent> HolidayEvents => Set<HolidayEvent>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

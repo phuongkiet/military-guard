@@ -29,6 +29,10 @@ namespace military_guard.Infrastructure.Repositories
                 .Include(d => d.DutyShift)
                 .AsNoTracking();
 
+            var targetDate = date ?? DateOnly.FromDateTime(DateTime.Now);
+
+            query = query.Where(sa => sa.Date == targetDate);
+
             if (date.HasValue)
             {
                 query = query.Where(sa => sa.Date == date);
@@ -44,7 +48,9 @@ namespace military_guard.Infrastructure.Repositories
                 query = query.Where(sa => sa.MilitiaId == militiaId);
             }
 
-            query = query.OrderByDescending(m => m.Id).ThenBy(sa => sa.DutyShift.ShiftOrder); ;
+            query = query.OrderBy(sa => sa.Date)
+             .ThenBy(sa => sa.DutyShift.ShiftOrder)
+             .ThenBy(sa => sa.GuardPost.Name);
 
             return await query.ToPaginatedListAsync(pageIndex, pageSize);
         }

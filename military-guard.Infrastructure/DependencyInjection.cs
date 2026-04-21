@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ namespace military_guard.Infrastructure
     {
         public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
         {
+            //Add DbContext
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             services.AddDbContext<AppDbContext>(options =>
@@ -24,6 +26,7 @@ namespace military_guard.Infrastructure
                 options.UseSqlServer(connectionString);
             });
 
+            //Add Auth
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -40,8 +43,20 @@ namespace military_guard.Infrastructure
                 };
             });
 
+            //Add SignalR
             services.AddSignalR();
 
+            //Add Hangfire
+            services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(connectionString));
+
+            services.AddHangfireServer();
+
+
+            //Add Scopes
             services.AddScoped<IMilitiaRepository, MilitiaRepository>();
             services.AddScoped<IGuardPostRepository, GuardPostRepository>();
             services.AddScoped<IDutyShiftRepository, DutyShiftRepository>();
@@ -52,6 +67,8 @@ namespace military_guard.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ISignalRService, SignalRService>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+            services.AddScoped<IGenericRepository<HolidayEvent>, GenericRepository<HolidayEvent>>();
+            services.AddScoped<IShiftSchedulingService, ShiftSchedulingService>();
 
             return services;
         }
