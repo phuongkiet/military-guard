@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using military_guard.Application.Common.Models;
 using military_guard.Application.Interfaces;
 using military_guard.Domain.Entities;
+using military_guard.Infrastructure.Extensions;
 using military_guard.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
@@ -12,6 +14,16 @@ namespace military_guard.Infrastructure.Repositories
     {
         public DutyShiftRepository(AppDbContext dbContext) : base(dbContext)
         {
+        }
+
+        public async Task<PaginatedList<DutyShift>> GetPagedDutyShiftsAsync(int pageIndex, int pageSize)
+        {
+            var query = _dbContext.DutyShifts
+                .AsNoTracking();
+
+            query = query.OrderBy(ds => ds.ShiftOrder);
+
+            return await query.ToPaginatedListAsync(pageIndex, pageSize);
         }
 
         public async Task<IReadOnlyList<DutyShift>> GetAllShiftsAsync()

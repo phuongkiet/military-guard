@@ -43,6 +43,7 @@ namespace military_guard.Infrastructure.Services
         {
             _logger.LogInformation("Bắt đầu chạy thuật toán xếp lịch tự động cho tuần tới...");
 
+            // 1. Xác định mốc thời gian (Thứ 2 đến Chủ Nhật tuần sau)
             var today = DateOnly.FromDateTime(DateTime.Now);
             int daysUntilMonday = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
             if (daysUntilMonday == 0) daysUntilMonday = 7;
@@ -50,36 +51,49 @@ namespace military_guard.Infrastructure.Services
             var nextMonday = today.AddDays(daysUntilMonday);
             var nextSunday = nextMonday.AddDays(6);
 
+            // 2. Tải toàn bộ Data nền lên RAM để xử lý cho nhanh
             var allPosts = (await _guardPostRepo.GetAllAsync()).Where(p => p.IsActive).ToList();
             var allShifts = await _dutyShiftRepo.GetAllShiftsAsync();
+
+            // 💡 RULE: Bỏ qua Chỉ huy trưởng và Chỉ huy phó (Họ không đi gác chốt)
             var allMilitias = (await _militiaRepo.GetAllAsync())
                 .Where(m => !m.IsDeleted
                          && m.Rank != MilitiaRank.Commander
-                         && m.Rank != MilitiaRank.ViceCommander) // Chặn đứng tại đây
+                         && m.Rank != MilitiaRank.ViceCommander)
                 .ToList();
+
             var allHolidays = await _holidayRepo.GetAllAsync();
 
+            // 3. Phân loại Lực lượng
             var standingForces = allMilitias.Where(m => m.Type == MilitiaType.Regular).ToList();
             var mobileForces = allMilitias.Where(m => m.Type == MilitiaType.Mobile).ToList();
 
-            // 💡 FIX LỖI: Tạo 1 bộ nhớ tạm để "nhớ" những ai đã được xếp ca trong đợt chạy này
+            // 💡 CÔNG CỤ: Bộ nhớ đệm giúp ngăn 1 người trực 2 chốt cùng giờ
             var memoryTracker = new HashSet<string>();
 
+            // 💡 TÌM TRỤ SỞ: Tìm chốt có tên chứa chữ "Trụ sở" để nhét quân dự bị vào
+            var hqPost = allPosts.FirstOrDefault(p => p.Name.Contains("Trụ sở"));
+
+            // 4. BẮT ĐẦU VÒNG LẶP THỜI GIAN
             for (var date = nextMonday; date <= nextSunday; date = date.AddDays(1))
             {
                 bool isHoliday = allHolidays.Any(h => h.Date == date && h.RequiresMobileForces);
 
-                foreach (var post in allPosts)
+                foreach (var shift in allShifts)
                 {
-                    foreach (var shift in allShifts)
-                    {
-                        var onLeaveIds = (await _leaveRepo.GetAllAsync())
-                            .Where(l => l.Status == LeaveStatus.Approved &&
-                                        DateOnly.FromDateTime(l.StartDate) <= date &&
-                                        DateOnly.FromDateTime(l.EndDate) >= date)
-                            .Select(l => l.MilitiaId).ToHashSet();
+                    // Lấy danh sách những người đang xin nghỉ phép trong ngày này
+                    var onLeaveIds = (await _leaveRepo.GetAllAsync())
+                        .Where(l => l.Status == LeaveStatus.Approved &&
+                                    DateOnly.FromDateTime(l.StartDate) <= date &&
+                                    DateOnly.FromDateTime(l.EndDate) >= date)
+                        .Select(l => l.MilitiaId).ToHashSet();
 
-                        bool isEveningShift = shift.StartTime >= new TimeOnly(18, 0);
+                    bool isEveningShift = shift.StartTime >= new TimeOnly(18, 0);
+
+                    foreach (var post in allPosts)
+                    {
+                        // Nếu là chốt "Trụ sở" thì bỏ qua, để dành xử lý sau
+                        if (hqPost != null && post.Id == hqPost.Id) continue;
 
                         List<Militia> candidatePool = new List<Militia>();
 
@@ -98,37 +112,48 @@ namespace military_guard.Infrastructure.Services
                             candidatePool.AddRange(standingForces);
                         }
 
+                        // Lọc người bận và Randomize để xếp ca công bằng
                         var availableMilitias = candidatePool
                             .Where(m => !onLeaveIds.Contains(m.Id))
                             .OrderBy(x => Guid.NewGuid())
                             .ToList();
 
-                        int assignedCount = 0;
-                        bool hasLeader = false;
+                        // 💡 GIẢI PHÁP MỚI: Bốc quân vào 1 đội trước
+                        var selectedTeam = new List<Militia>();
+                        bool hasCapableLeader = false;
 
                         foreach (var militia in availableMilitias)
                         {
-                            if (assignedCount >= post.MaxPersonnel) break;
+                            // Nếu đã đủ người tối đa thì ngưng bốc
+                            if (selectedTeam.Count >= post.MaxPersonnel) break;
 
-                            // 💡 FIX LỖI: Tạo chìa khóa (Key) để check trùng lặp (Ví dụ: "MilitiaId_20260503_ShiftId")
                             string trackingKey = $"{militia.Id}_{date:yyyyMMdd}_{shift.Id}";
 
-                            // Check xem DB có lịch cũ không?
                             bool isDoubleBookedDb = await _assignmentRepo.IsMilitiaDoubleBookedAsync(militia.Id, date, shift.Id);
 
-                            // Nếu DB đã có, HOẶC vòng lặp nãy (ở chốt khác) đã pick anh này rồi thì Bỏ Qua!
                             if (isDoubleBookedDb || memoryTracker.Contains(trackingKey))
                                 continue;
 
-                            bool assignAsLeader = false;
-                            if (!hasLeader && militia.IsCapableLeader())
-                            {
-                                assignAsLeader = true;
-                                hasLeader = true;
-                            }
+                            // Thêm vào team và đánh dấu đã bốc
+                            selectedTeam.Add(militia);
+                            memoryTracker.Add(trackingKey);
 
-                            if (assignedCount >= post.MinPersonnel && hasLeader) break;
+                            // Đánh dấu xem trong team đã có ai CÓ THỂ làm leader chưa
+                            if (militia.IsCapableLeader()) hasCapableLeader = true;
 
+                            // Nếu đã đạt MinPersonnel VÀ trong team đã có người đủ chuẩn làm leader thì dừng bốc
+                            if (selectedTeam.Count >= post.MinPersonnel && hasCapableLeader) break;
+                        }
+
+                        var leader = selectedTeam
+                            .Where(m => m.IsCapableLeader())
+                            .OrderByDescending(m => m.Rank) // Cấp bậc to nhất lên đầu
+                            .ThenBy(m => m.JoinDate)        // Vào ngành sớm nhất lên đầu
+                            .FirstOrDefault();
+
+                        // 💡 RÓT QUÂN XUỐNG DB
+                        foreach (var militia in selectedTeam)
+                        {
                             var assignment = new ShiftAssignment
                             {
                                 Id = Guid.NewGuid(),
@@ -136,30 +161,63 @@ namespace military_guard.Infrastructure.Services
                                 DutyShiftId = shift.Id,
                                 GuardPostId = post.Id,
                                 MilitiaId = militia.Id,
-                                IsLeader = assignAsLeader,
+                                IsLeader = (leader != null && militia.Id == leader.Id), // Chỉ gán true cho đúng ông leader đã bầu
+                                IsStandby = false,
                                 CreatedAt = DateTime.UtcNow,
                                 CreatedBy = "System_Auto"
                             };
 
                             await _assignmentRepo.AddAsync(assignment);
+                        }
+                    }
 
-                            // 💡 FIX LỖI: Đánh dấu anh này vào RAM là "ĐÃ CÓ CA TRONG NGÀY NÀY, GIỜ NÀY RỒI NHÉ!"
-                            memoryTracker.Add(trackingKey);
+                    if (hqPost != null)
+                    {
+                        // Ngày lễ gọi 5 dự bị, Ca tối gọi 2 dự bị, Ca ngày không gọi
+                        int requiredStandby = isHoliday ? 5 : (isEveningShift ? 2 : 0);
 
-                            assignedCount++;
+                        if (requiredStandby > 0)
+                        {
+                            // Quét lấy những anh Cơ động CHƯA bị bắt đi gác chốt ở Phase A
+                            var availableStandby = mobileForces
+                                .Where(m => !onLeaveIds.Contains(m.Id)) // Không xin nghỉ phép
+                                .Where(m => !memoryTracker.Contains($"{m.Id}_{date:yyyyMMdd}_{shift.Id}")) // Đang rảnh
+                                .OrderBy(x => Guid.NewGuid())
+                                .Take(requiredStandby)
+                                .ToList();
+
+                            foreach (var militia in availableStandby)
+                            {
+                                var standbyAssignment = new ShiftAssignment
+                                {
+                                    Id = Guid.NewGuid(),
+                                    Date = date,
+                                    DutyShiftId = shift.Id,
+                                    GuardPostId = hqPost.Id,
+                                    MilitiaId = militia.Id,
+                                    IsLeader = false, // Quân dự bị không cần trưởng ca
+                                    IsStandby = true, // 💡 Bật cờ dự bị lên
+                                    CreatedAt = DateTime.UtcNow,
+                                    CreatedBy = "System_Auto_Standby"
+                                };
+
+                                await _assignmentRepo.AddAsync(standbyAssignment);
+                                memoryTracker.Add($"{militia.Id}_{date:yyyyMMdd}_{shift.Id}");
+                            }
                         }
                     }
                 }
             }
 
+            // Lưu tất cả một lần duy nhất xuống DB
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation($"Đã tạo xong lịch trực tự động cho tuần từ {nextMonday} đến {nextSunday}.");
         }
 
         public async Task ScanAndNotifyUpcomingShiftsAsync()
         {
-            // TODO: Phần bắn SignalR 36h anh em mình sẽ ráp sau khi lịch đã chạy mượt.
-            _logger.LogInformation("Đang quét để gửi thông báo...");
+            _logger.LogInformation("Đang quét để gửi thông báo 36h...");
+            // TODO: Viết logic thông báo ở các phần sau
             await Task.CompletedTask;
         }
     }

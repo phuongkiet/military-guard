@@ -68,6 +68,7 @@ namespace military_guard.Infrastructure
             services.AddScoped<ISignalRService, SignalRService>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             services.AddScoped<IGenericRepository<HolidayEvent>, GenericRepository<HolidayEvent>>();
+            services.AddScoped<IHolidayEventRepository, HolidayEventRepository>();
             services.AddScoped<IShiftSchedulingService, ShiftSchedulingService>();
 
             return services;
