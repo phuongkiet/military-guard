@@ -37,6 +37,13 @@ RecurringJob.AddOrUpdate<IShiftSchedulingService>(
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Local }
 );
 
+RecurringJob.AddOrUpdate<IAttendanceBackgroundService>(
+    "auto-close-attendance-missing",
+    service => service.AutoCloseAttendanceAsync(),
+    "*/5 * * * *",
+    new RecurringJobOptions { TimeZone = TimeZoneInfo.Local }
+);
+
 app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
@@ -53,7 +60,7 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapHub<AttendanceHub>("/hubs/attendance");
+app.MapHub<AttendanceHub>("/api/hubs/attendance");
 
 app.MapControllers();
 

@@ -8,6 +8,7 @@ namespace military_guard.Domain.Enums
     {
         OnTime = 1,
         LateWarning = 2,
-        PenaltyThreshold = 3
+        PenaltyThreshold = 3,
+        Absent = 4
     }
 }

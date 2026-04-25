@@ -29,5 +29,23 @@ namespace military_guard.Infrastructure.Repositories
                     a.CheckInTime < startOfNextMonth
                 );
         }
+
+        public async Task<bool> HasCheckedInAsync(Guid militiaId, Guid shiftId, DateOnly date)
+        {
+            return await _dbContext.Attendances
+                .AnyAsync(a => a.MilitiaId == militiaId
+                            && a.ShiftId == shiftId
+                            && a.CheckInTime.Year == date.Year
+                            && a.CheckInTime.Month == date.Month
+                            && a.CheckInTime.Day == date.Day);
+        }
+
+        public async Task<List<Attendance>> GetAttendancesByShiftAndDateAsync(Guid shiftId, DateOnly date)
+        {
+            return await _dbContext.Attendances
+                .Where(a => a.ShiftId == shiftId && a.CheckInTime.Date == date.ToDateTime(TimeOnly.MinValue).Date)
+                .AsNoTracking()
+                .ToListAsync();
+        }
     }
 }

@@ -30,8 +30,8 @@ namespace military_guard.Application.Features.GuardPosts.Queries.GetAllGuardPost
                 g.Id,
                 g.Name,
                 g.Location,
-                g.MaxPersonnel,
                 g.MinPersonnel,
+                g.MaxPersonnel,
                 g.IsActive
             )).ToList();
 

@@ -10,6 +10,9 @@ namespace military_guard.Application.Features.Militias.DTOs
     string Email,
     string Type,             // Loại dân quân (Thường trực/Cơ động)
     string Rank,             // Cấp bậc
+    DateTime JoinDate,
+    Guid? ManagerId,
+
     int MonthsOfService,     // ĐIỂM ĂN TIỀN: Trả về số tháng thâm niên
     string? ManagerName      // Tên người chỉ huy
 );

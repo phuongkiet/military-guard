@@ -8,6 +8,7 @@ namespace military_guard.Application.Features.Attendances.Commands.CheckIn
 {
     public record CheckInCommand(
     Guid MilitiaId,
+    Guid GuardPostId,
     Guid ShiftId
 ) : IRequest<AttendanceResponse>;
 }

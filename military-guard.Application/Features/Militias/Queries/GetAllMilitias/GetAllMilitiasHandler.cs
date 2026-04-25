@@ -31,6 +31,8 @@ public class GetMilitiasQueryHandler : IRequestHandler<GetAllMilitiasQuery, Pagi
             m.Email,
             m.Type.ToString(),         // Chuyển Enum thành chữ
             m.Rank.ToString(),         // Chuyển Enum thành chữ
+            m.JoinDate,
+            m.ManagerId,
             m.MonthsOfService,         // Lấy giá trị tính toán tự động từ Entity
             m.Manager?.FullName
         )).ToList();

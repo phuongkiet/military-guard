@@ -32,6 +32,8 @@ namespace military_guard.Application.Features.Attendances.Commands.CheckIn
         public async Task<AttendanceResponse> Handle(CheckInCommand request, CancellationToken cancellationToken)
         {
             var now = DateTime.Now;
+            var currentTimeOnly = TimeOnly.FromDateTime(now);
+            var today = DateOnly.FromDateTime(now);
 
             var shift = await _dutyShiftRepository.GetByIdAsync(request.ShiftId);
             if (shift == null) throw new Exception("Không tìm thấy thông tin ca trực.");
@@ -39,14 +41,24 @@ namespace military_guard.Application.Features.Attendances.Commands.CheckIn
             var militia = await _militiaRepository.GetByIdAsync(request.MilitiaId);
             if (militia == null) throw new Exception("Không tìm thấy thông tin dân quân.");
 
+            if (currentTimeOnly < shift.StartTime)
+            {
+                throw new Exception($"Chưa tới giờ điểm danh! Ca trực của đồng chí sẽ mở vào lúc {shift.StartTime:HH:mm}. Vui lòng chờ thêm {(shift.StartTime - currentTimeOnly).TotalMinutes:F0} phút nữa.");
+            }
+
+            var deadlineTime = shift.StartTime.AddMinutes(10);
+            if (currentTimeOnly > deadlineTime)
+            {
+                throw new Exception($"Đã quá thời gian điểm danh! Ca trực mở lúc {shift.StartTime:HH:mm} và đã đóng cửa lúc {deadlineTime:HH:mm}. Đồng chí đã bị ghi nhận Vắng mặt.");
+            }
+
+            bool hasCheckedIn = await _attendanceRepository.HasCheckedInAsync(request.MilitiaId, request.ShiftId, today);
+            if (hasCheckedIn) throw new Exception("Đồng chí đã điểm danh cho ca này rồi!");
+
             var status = AttendanceStatus.OnTime;
-
-            var currentTimeOnly = TimeOnly.FromDateTime(now);
-
-            if (currentTimeOnly > shift.StartTime)
+            if (currentTimeOnly > shift.StartTime.AddMinutes(10))
             {
                 var previousWarnings = await _attendanceRepository.CountLateInMonth(request.MilitiaId, now);
-
                 status = (previousWarnings >= 1) ? AttendanceStatus.PenaltyThreshold : AttendanceStatus.LateWarning;
             }
 
@@ -62,14 +74,25 @@ namespace military_guard.Application.Features.Attendances.Commands.CheckIn
             await _attendanceRepository.AddAsync(attendance);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await _signalRService.SendAttendanceNotification(
-                militia.FullName,
-                now,
-                status.ToString(),
-                status == AttendanceStatus.PenaltyThreshold
+            if (status == AttendanceStatus.PenaltyThreshold)
+            {
+                await _signalRService.SendAttendanceNotification(
+                    militia.FullName,
+                    now,
+                    status.ToString(),
+                    true
+                );
+            }
+
+            await _signalRService.SendCheckInEventToRoom(
+                shift.Id,
+                today,
+                request.MilitiaId,
+                status,
+                now
             );
 
-            return new AttendanceResponse(status);
+            return new AttendanceResponse(attendance.Id, status);
         }
     }
 }

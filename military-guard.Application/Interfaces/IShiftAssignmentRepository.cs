@@ -13,6 +13,8 @@ namespace military_guard.Application.Interfaces
 
         Task<ShiftAssignment?> GetAssignmentDetailsAsync(Guid id);
 
+        Task<List<ShiftAssignment>> GetAssignmentsByShiftAndDateAsync(Guid shiftId, DateOnly date);
+
         Task<bool> IsMilitiaDoubleBookedAsync(Guid militiaId, DateOnly date, Guid dutyShiftId);
 
         Task<int> CountMilitiasInShiftAsync(Guid guardPostId, Guid dutyShiftId, DateOnly date);

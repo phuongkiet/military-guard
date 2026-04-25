@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using military_guard.Application.Interfaces;
+using military_guard.Domain.Enums;
 using military_guard.Infrastructure.SignalRHubs;
 using System;
 using System.Collections.Generic;
@@ -24,6 +25,18 @@ namespace military_guard.Infrastructure.Services
                 CheckInTime = checkInTime.ToString("HH:mm:ss"),
                 Status = status,
                 IsEmergency = isEmergency
+            });
+        }
+
+        public async Task SendCheckInEventToRoom(Guid dutyShiftId, DateOnly date, Guid militiaId, AttendanceStatus status, DateTime checkInTime)
+        {
+            string roomName = $"LiveShift_{date:yyyyMMdd}_{dutyShiftId.ToString().ToLower()}";
+
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveAttendanceUpdate", new
+            {
+                militiaId = militiaId,
+                status = status,
+                checkInTime = checkInTime
             });
         }
     }

@@ -6,6 +6,7 @@ using System.Text;
 namespace military_guard.Application.Features.Attendances.DTOs
 {
     public record AttendanceResponse(
+        Guid Id,
     AttendanceStatus Status
 );
 }

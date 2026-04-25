@@ -39,6 +39,12 @@ namespace military_guard.API.ExceptionHandlers
                     .GroupBy(e => e.PropertyName, e => e.ErrorMessage)
                     .ToDictionary(failureGroup => failureGroup.Key, failureGroup => failureGroup.ToArray());
             }
+            else if (exception is Exception)
+            {
+                problemDetails.Title = "Lỗi nghiệp vụ.";
+                problemDetails.Status = StatusCodes.Status400BadRequest;
+                problemDetails.Detail = exception.Message; 
+            }
             else
             {
                 // Lỗi hệ thống (NullReference, Database sập...)

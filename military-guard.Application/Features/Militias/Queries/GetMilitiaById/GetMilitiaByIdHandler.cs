@@ -31,6 +31,8 @@ namespace military_guard.Application.Features.Militias.Queries.GetMilitiaById
                 Email: militia.Email,
                 Type: militia.Type.ToString(),
                 Rank: militia.Rank.ToString(),
+                JoinDate: militia.JoinDate,
+                ManagerId: militia.ManagerId,
                 MonthsOfService: militia.MonthsOfService,
                 ManagerName: militia.Manager?.FullName
             );

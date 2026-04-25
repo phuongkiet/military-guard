@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using military_guard.Application.Features.Attendances.Commands.CheckIn;
+using military_guard.Application.Features.Attendances.Queries.GetLiveAttendances;
 
 namespace military_guard.API.Controllers
 {
@@ -15,6 +16,18 @@ namespace military_guard.API.Controllers
         public AttendancesController(IMediator mediator)
         {
             _mediator = mediator;
+        }
+
+        [HttpGet("shift/{shiftId}")]
+        public async Task<IActionResult> GetLiveAttendancesByShift(Guid shiftId, [FromQuery] DateOnly? date)
+        {
+            var query = new GetLiveAttendancesQuery
+            {
+                ShiftId = shiftId,
+                Date = date
+            };
+            var result = await _mediator.Send(query);
+            return Ok(result);
         }
 
         [HttpPost("check-in")]
