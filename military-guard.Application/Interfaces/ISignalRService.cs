@@ -9,5 +9,6 @@ namespace military_guard.Application.Interfaces
     {
         Task SendAttendanceNotification(string militiaName, DateTime checkInTime, string status, bool isEmergency);
         Task SendCheckInEventToRoom(Guid dutyShiftId, DateOnly date, Guid militiaId, AttendanceStatus status, DateTime checkInTime);
+        Task SendShiftStructureChangedEvent(Guid dutyShiftId, DateOnly date);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using military_guard.Application.Common.Models;
+using military_guard.Application.Features.ShiftAssignments.DTOs;
 using military_guard.Application.Interfaces;
 using military_guard.Domain.Entities;
 using military_guard.Domain.Enums;
@@ -73,5 +74,38 @@ public class MilitiaRepository : GenericRepository<Militia>, IMilitiaRepository
         if (!manager.IsCapableLeader()) return false;
 
         return true;
+    }
+
+    public async Task<List<SubstituteDto>> GetAvailableForShiftAsync(Guid shiftId, DateOnly date)
+    {
+        var query = from m in _dbContext.Militias
+                    where m.IsDeleted == false && m.Rank != MilitiaRank.Commander && m.Rank != MilitiaRank.ViceCommander
+
+                    //Join shift
+                    join sa in _dbContext.ShiftAssignments
+                        .Where(x => x.DutyShiftId == shiftId && x.Date == date && x.IsDeleted == false)
+                    on m.Id equals sa.MilitiaId into saGroup
+                    from sa in saGroup.DefaultIfEmpty()
+
+                    //Join attendance
+                    join att in _dbContext.Attendances
+                        .Where(x => x.ShiftId == shiftId && x.IsDeleted == false)
+                    on m.Id equals att.MilitiaId into attGroup
+                    from att in attGroup.DefaultIfEmpty()
+
+                    //Query to get the regulars to substitute, not using mobile but not attend
+                    where
+                        (m.Type == MilitiaType.Regular && sa == null)
+                        ||
+                        (sa != null && sa.IsStandby == true && att != null && (att.Status == AttendanceStatus.OnTime || att.Status == AttendanceStatus.LateWarning))
+
+                    select new SubstituteDto
+                    {
+                        MilitiaId = m.Id,
+                        FullName = m.FullName,
+                        IsStandby = sa != null && sa.IsStandby
+                    };
+
+        return await query.OrderByDescending(x => x.IsStandby).ThenBy(x => x.FullName).ToListAsync();
     }
 }

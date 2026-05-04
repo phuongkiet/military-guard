@@ -81,5 +81,13 @@ namespace military_guard.Infrastructure.Repositories
                 .AsNoTracking()
                 .ToListAsync();
         }
+
+        public async Task<ShiftAssignment?> GetByMilitiaAndShiftAsync(Guid militiaId, Guid shiftId, DateOnly date)
+        {
+            return await _dbContext.ShiftAssignments
+                .FirstOrDefaultAsync(sa => sa.MilitiaId == militiaId
+                                        && sa.DutyShiftId == shiftId
+                                        && sa.Date == date);
+        }
     }
 }

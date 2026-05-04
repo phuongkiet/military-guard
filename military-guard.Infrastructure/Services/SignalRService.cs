@@ -39,5 +39,11 @@ namespace military_guard.Infrastructure.Services
                 checkInTime = checkInTime
             });
         }
+
+        public async Task SendShiftStructureChangedEvent(Guid dutyShiftId, DateOnly date)
+        {
+            string roomName = $"LiveShift_{date:yyyyMMdd}_{dutyShiftId.ToString().ToLower()}";
+            await _hubContext.Clients.Group(roomName).SendAsync("ReceiveShiftStructureChanged");
+        }
     }
 }

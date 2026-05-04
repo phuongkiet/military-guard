@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using military_guard.Application.Features.ShiftAssignments.Commands.CreateShiftAssignment;
 using military_guard.Application.Features.ShiftAssignments.Commands.DeleteShiftAssignment;
+using military_guard.Application.Features.ShiftAssignments.Commands.SubstituteMilitia;
 using military_guard.Application.Features.ShiftAssignments.Commands.UpdateShiftAssignment;
 using military_guard.Application.Features.ShiftAssignments.Queries.GetAllShiftAssignments;
+using military_guard.Application.Features.ShiftAssignments.Queries.GetAvailableSubstitutes;
 using military_guard.Application.Features.ShiftAssignments.Queries.GetShiftAssignmentById;
 
 namespace military_guard.API.Controllers
@@ -41,11 +43,26 @@ namespace military_guard.API.Controllers
             return Ok(result); 
         }
 
+        [HttpGet("{absentAssignmentId}/available-substitutes")]
+        public async Task<IActionResult> GetAvailableSubstitutes(Guid absentAssignmentId)
+        {
+            var query = new GetAvailableSubstitutesQuery { AbsentAssignmentId = absentAssignmentId };
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateShiftAssignmentCommand command)
         {
             var result = await _mediator.Send(command);
             return CreatedAtAction(nameof(GetById), new { id = result }, result);
+        }
+
+        [HttpPost("substitute")]
+        public async Task<IActionResult> SubstituteMilitia([FromBody] SubstituteMilitiaCommand command)
+        {
+            var newAssignmentId = await _mediator.Send(command);
+            return Ok(new { Message = "Điều động thành công", AssignmentId = newAssignmentId });
         }
 
         [HttpPut("{id}")]

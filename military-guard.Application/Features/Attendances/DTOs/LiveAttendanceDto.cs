@@ -7,6 +7,7 @@ namespace military_guard.Application.Features.Attendances.DTOs
 {
     public class LiveAttendanceDto
     {
+        public Guid AssignmentId { get; set; }
         public Guid MilitiaId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string GuardPostName { get; set; } = string.Empty;

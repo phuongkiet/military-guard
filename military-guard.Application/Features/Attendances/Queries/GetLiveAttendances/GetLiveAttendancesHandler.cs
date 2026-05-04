@@ -35,6 +35,7 @@ namespace military_guard.Application.Features.Attendances.Queries.GetLiveAttenda
 
                 return new LiveAttendanceDto
                 {
+                    AssignmentId = sa.Id,
                     MilitiaId = sa.MilitiaId,
                     FullName = sa.Militia!.FullName,
                     GuardPostName = sa.GuardPost?.Name ?? "Trụ sở",

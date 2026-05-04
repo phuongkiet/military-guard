@@ -18,5 +18,6 @@ namespace military_guard.Application.Interfaces
         Task<bool> IsMilitiaDoubleBookedAsync(Guid militiaId, DateOnly date, Guid dutyShiftId);
 
         Task<int> CountMilitiasInShiftAsync(Guid guardPostId, Guid dutyShiftId, DateOnly date);
+        Task<ShiftAssignment?> GetByMilitiaAndShiftAsync(Guid militiaId, Guid shiftId, DateOnly date);
     }
 }
